@@ -35,6 +35,17 @@ ERT_STUB(pthread_yield, -1)
 ERT_STUB(setcontext, -1)
 ERT_STUB(__fdelt_chk, 0)
 
+// musl implements POSIX which returns int, but we
+// compile mariadb with glibc which returns char*
+// see man strerror
+char* strerror_r(int err) {
+  char* strerror();
+  // sufficient for mariadb to just return strerror() here
+  return strerror(err);
+}
+// musl defines this in strerror_r.c. We must also do it to prevent multiple definition error.
+OE_WEAK_ALIAS(strerror_r, __xpg_strerror_r);
+
 // New stubs for newer glibc/libraries
 char *__fgets_chk(char *s, size_t size, int n, FILE *stream) {
     if (size > n) {
