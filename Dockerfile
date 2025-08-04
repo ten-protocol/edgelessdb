@@ -1,4 +1,4 @@
-FROM ghcr.io/edgelesssys/edgelessdb/build-base:v0.3.2 AS build
+FROM testnetobscuronet.azurecr.io/obscuronet/ten-edb-build-base:v0.3.2 AS build
 
 # don't run `apt-get update` because required packages are cached in build-base for reproducibility
 RUN DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
