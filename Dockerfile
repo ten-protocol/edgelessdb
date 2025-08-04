@@ -45,10 +45,13 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
   wget \
   && wget -qO- https://download.01.org/intel-sgx/sgx_repo/ubuntu/intel-sgx-deb.key | apt-key add \
   && echo 'deb [arch=amd64] https://download.01.org/intel-sgx/sgx_repo/ubuntu jammy main' >> /etc/apt/sources.list \
-  && wget -qO- https://packages.microsoft.com/keys/microsoft.asc | apt-key add \
-  && echo 'deb [arch=amd64] https://packages.microsoft.com/ubuntu/22.04/prod jammy main' >> /etc/apt/sources.list \
   && apt-get update \
+  && apt-get install -y --no-install-recommends libsgx-dcap-default-qpl \
   && rm -rf /var/lib/apt/lists/*
+
+ARG PCCS_URL=https://global.acccache.azure.net/sgx/certification/v4/
+RUN echo "PCCS_URL=${PCCS_URL}" > /etc/sgx_default_qcnl.conf \
+  && echo "USE_SECURE_CERT=FALSE" >> /etc/sgx_default_qcnl.conf
 
 COPY --from=build /edbbuild/edb /edbbuild/edb-enclave.signed /edbbuild/edgelessdb-sgx.json /edgelessdb/src/entry.sh /
 COPY --from=build /opt/edgelessrt/bin/erthost /opt/edgelessrt/bin/
