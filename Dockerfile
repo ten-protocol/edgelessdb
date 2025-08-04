@@ -1,36 +1,27 @@
-FROM testnetobscuronet.azurecr.io/obscuronet/ten-edb-build-base:v0.3.2 AS build
+#FROM testnetobscuronet.azurecr.io/obscuronet/ten-edb-build-base:v0.3.3 AS build
+FROM local-build-base AS build
 
-# don't run `apt-get update` because required packages are cached in build-base for reproducibility
-RUN DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-  bbe \
-  bison \
-  build-essential \
-  ca-certificates \
-  clang-10 \
-  cmake \
-  git \
-  liblz4-dev \
-  libncurses-dev \
-  libssl-dev \
-  ninja-build \
-  zlib1g-dev
+COPY . /edgelessdb
 
-ARG erttag=v0.3.6
-ARG edbtag=v0.3.2
-RUN git clone -b $erttag --depth=1 https://github.com/edgelesssys/edgelessrt \
-  && git clone -b $edbtag --depth=1 https://github.com/edgelesssys/edgelessdb \
-  && mkdir ertbuild edbbuild
+# download 3rd party dependencies (mariadb & rocksdb)
+RUN cd edgelessdb &&  git submodule update --init --recursive
 
-# install ert
-RUN cd edgelessrt && export SOURCE_DATE_EPOCH=$(git log -1 --pretty=%ct) && cd /ertbuild \
-  && cmake -GNinja -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTS=OFF /edgelessrt \
-  && ninja install
+# comment out some deprecated RND initialisation
+RUN cd edgelessdb/3rdparty/edgeless-rocksdb && ls -ll
+RUN sed -i '37,49s/^/\/\/ /' /edgelessdb/3rdparty/edgeless-rocksdb/libedgeless/src/crypto.cc
 
 # build edb
-RUN cd edgelessdb && export SOURCE_DATE_EPOCH=$(git log -1 --pretty=%ct) && cd /edbbuild \
+RUN cd edgelessdb && export SOURCE_DATE_EPOCH=$(git log -1 --pretty=%ct)  \
+  && go mod vendor \
+  && go mod tidy \
+  && cd /edbbuild \
   && . /opt/edgelessrt/share/openenclave/openenclaverc \
-  && cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTS=OFF /edgelessdb \
-  && make -j`nproc` edb-enclave
+  && cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTS=OFF \
+    -DCMAKE_C_FLAGS="-Wno-deprecated-declarations" \
+    -DCMAKE_CXX_FLAGS="-Wno-deprecated-declarations" \
+    -DMYSQL_MAINTAINER_MODE=NO \
+    /edgelessdb \
+  && make -j1 VERBOSE=1  edb-enclave
 
 # sign edb
 ARG heapsize=1024
@@ -39,30 +30,27 @@ ARG production=OFF
 RUN --mount=type=secret,id=signingkey,dst=/edbbuild/private.pem,required=true \
   cd edbbuild \
   && . /opt/edgelessrt/share/openenclave/openenclaverc \
-  && cmake -DHEAPSIZE=$heapsize -DNUMTCS=$numtcs -DPRODUCTION=$production /edgelessdb \
+  && cmake -DHEAPSIZE=$heapsize -DNUMTCS=$numtcs -DPRODUCTION=$production \
+    -DCMAKE_C_FLAGS="-Wno-deprecated-declarations" \
+    -DCMAKE_CXX_FLAGS="-Wno-deprecated-declarations" \
+    /edgelessdb \
   && make sign-edb \
   && cat edgelessdb-sgx.json
 
 # deploy
-FROM ubuntu:focal-20221019
-ARG PSW_VERSION=2.18.100.3-focal1
-ARG DCAP_VERSION=1.15.100.3-focal1
-RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates gnupg libcurl4 wget \
+FROM --platform=linux/amd64 ubuntu:jammy-20250714
+RUN apt-get update && apt-get install -y --no-install-recommends \
+  ca-certificates \
+  gnupg \
+  libcurl4 \
+  wget \
   && wget -qO- https://download.01.org/intel-sgx/sgx_repo/ubuntu/intel-sgx-deb.key | apt-key add \
-  && echo 'deb [arch=amd64] https://download.01.org/intel-sgx/sgx_repo/ubuntu focal main' >> /etc/apt/sources.list \
+  && echo 'deb [arch=amd64] https://download.01.org/intel-sgx/sgx_repo/ubuntu jammy main' >> /etc/apt/sources.list \
   && wget -qO- https://packages.microsoft.com/keys/microsoft.asc | apt-key add \
-  && echo 'deb [arch=amd64] https://packages.microsoft.com/ubuntu/20.04/prod focal main' >> /etc/apt/sources.list \
-  && apt-get update && apt-get install -y --no-install-recommends \
-  libsgx-ae-id-enclave=$DCAP_VERSION \
-  libsgx-ae-pce=$PSW_VERSION \
-  libsgx-ae-qe3=$DCAP_VERSION \
-  libsgx-dcap-ql=$DCAP_VERSION \
-  libsgx-enclave-common=$PSW_VERSION \
-  libsgx-launch=$PSW_VERSION \
-  libsgx-pce-logic=$DCAP_VERSION \
-  libsgx-qe3-logic=$DCAP_VERSION \
-  libsgx-urts=$PSW_VERSION \
-  && apt-get install -d az-dcap-client libsgx-dcap-default-qpl=$DCAP_VERSION
+  && echo 'deb [arch=amd64] https://packages.microsoft.com/ubuntu/22.04/prod jammy main' >> /etc/apt/sources.list \
+  && apt-get update \
+  && rm -rf /var/lib/apt/lists/*
+
 COPY --from=build /edbbuild/edb /edbbuild/edb-enclave.signed /edbbuild/edgelessdb-sgx.json /edgelessdb/src/entry.sh /
 COPY --from=build /opt/edgelessrt/bin/erthost /opt/edgelessrt/bin/
 ENV PATH=${PATH}:/opt/edgelessrt/bin

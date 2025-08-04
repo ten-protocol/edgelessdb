@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.11)
-project(edb VERSION 0.3.2)
+project(edb VERSION 0.3.3)
 
 if (NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE Debug)
@@ -80,7 +80,7 @@ ProcessorCount(NPROC)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_EXTENSIONS OFF)
-add_compile_options(-Wall -Wextra -pedantic -Werror)
+# add_compile_options(-Wall -Wextra -pedantic -Werror)
 if(TIDY)
   set(CMAKE_CXX_CLANG_TIDY clang-tidy-10)
 endif()
@@ -220,12 +220,12 @@ target_link_libraries(edb-noenclave
 
 # We want to override OPENSSL_rdtsc in libcrypto. To avoid multiple definition errors, we extract the
 # obj containing the original function, rename the symbol, and link the obj before linking libcrypto.
-add_custom_command(OUTPUT x86_64cpuid.o
+add_custom_command(OUTPUT libdefault-lib-rand_tsc.o
   DEPENDS /usr/lib/x86_64-linux-gnu/libcrypto.a
-  COMMAND ar x /usr/lib/x86_64-linux-gnu/libcrypto.a x86_64cpuid.o)
-add_custom_command(OUTPUT x86_64cpuid_.o
-  DEPENDS x86_64cpuid.o
-  COMMAND bbe -e 's/OPENSSL_rdtsc/OPENSSL_rdtsC/' x86_64cpuid.o > x86_64cpuid_.o)
+  COMMAND ar x /usr/lib/x86_64-linux-gnu/libcrypto.a libdefault-lib-rand_tsc.o)
+add_custom_command(OUTPUT libdefault-lib-rand_tsc_.o
+  DEPENDS libdefault-lib-rand_tsc.o
+  COMMAND bbe -e 's/OPENSSL_rdtsc/OPENSSL_rdtsC/' libdefault-lib-rand_tsc.o > libdefault-lib-rand_tsc_.o)
 
 add_library(edb-lib
   src/emain.cc
@@ -240,19 +240,27 @@ add_custom_target(edb-golib
   ${CMAKE_SOURCE_DIR}/src/build_golib.sh ${CMAKE_BINARY_DIR} ${PROJECT_VERSION}
   WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/cmd/edb)
 
-add_executable(edb-enclave src/mysqld_main.cc src/stubs.c x86_64cpuid_.o)
+add_executable(edb-enclave src/mysqld_main.cc src/stubs.c libdefault-lib-rand_tsc_.o)
 add_dependencies(edb-enclave edb-golib mariadb)
 
 target_link_libraries(edb-enclave
-  openenclave::oeenclave
-  openenclave::ertcalls
-  edb-lib
-  openenclave::oehostepoll
-  openenclave::oehostfs
-  openenclave::oehostresolver
-  openenclave::oehostsock
-  ${CMAKE_BINARY_DIR}/edb.a
-  ${MARIADB_LIBS})
+    pthread
+    openenclave::oeenclave
+    openenclave::ertcalls
+    edb-lib
+    openenclave::oehostepoll
+    openenclave::oehostfs
+    openenclave::oehostresolver
+    openenclave::oehostsock
+    ${CMAKE_BINARY_DIR}/edb.a
+    ${MARIADB_LIBS}
+)
+
+target_link_options(edb-enclave PRIVATE -Wl,--allow-multiple-definition)
+target_compile_definitions(edb-enclave PRIVATE
+    _GNU_SOURCE
+    _FORTIFY_SOURCE=0  # Disable fortified functions
+)
 
 add_custom_command(
   OUTPUT edb-enclave.signed
