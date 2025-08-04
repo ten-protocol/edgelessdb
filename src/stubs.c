@@ -25,26 +25,54 @@
 
 ERT_STUB(backtrace_symbols_fd, 0)
 ERT_STUB_SILENT(fedisableexcept, -1)
-ERT_STUB(getcontext, -1)
 ERT_STUB_SILENT(gnu_dev_major, 0)
 ERT_STUB_SILENT(gnu_dev_minor, 0)
-ERT_STUB(makecontext, 0)
 ERT_STUB(mallinfo, 0)
-ERT_STUB_SILENT(pthread_setname_np, 0)
 ERT_STUB(pthread_yield, -1)
-ERT_STUB(setcontext, -1)
 ERT_STUB(__fdelt_chk, 0)
+
+int getcontext(ucontext_t *ucp) {
+    errno = ENOSYS;
+    return -1;
+}
+
+int setcontext(const ucontext_t *ucp) {
+    errno = ENOSYS;
+    return -1;
+}
+
+void makecontext(ucontext_t *ucp, void (*func)(void), int argc, ...) {
+    // This is a stub implementation - does nothing
+    // In a real implementation, this would set up the context to call func
+    (void)ucp;
+    (void)func;
+    (void)argc;
+}
+
+int pthread_setname_np(pthread_t thread, const char *name) {
+    // Silent stub - return success without doing anything
+    (void)thread;
+    (void)name;
+    return 0;
+}
 
 // musl implements POSIX which returns int, but we
 // compile mariadb with glibc which returns char*
 // see man strerror
-char* strerror_r(int err) {
-  char* strerror();
-  // sufficient for mariadb to just return strerror() here
-  return strerror(err);
+int strerror_r (int, char *, size_t){
+    return 0;
 }
-// musl defines this in strerror_r.c. We must also do it to prevent multiple definition error.
-OE_WEAK_ALIAS(strerror_r, __xpg_strerror_r);
+
+// GNU version of strerror_r that returns char*
+// We provide this as __xpg_strerror_r and create an alias
+char* __xpg_strerror_r(int errnum, char *buf, size_t buflen) {
+    // Use the POSIX strerror_r that's already declared
+    int ret = strerror_r(errnum, buf, buflen);
+    if (ret == 0) {
+        return buf;
+    }
+    return NULL;
+}
 
 // New stubs for newer glibc/libraries
 char *__fgets_chk(char *s, size_t size, int n, FILE *stream) {
@@ -82,13 +110,4 @@ int pthread_cond_clockwait(pthread_cond_t *cond, pthread_mutex_t *mutex,
 int swapcontext(ucontext_t *oucp, const ucontext_t *ucp) {
     errno = ENOSYS;
     return -1;
-}
-
-char *__xpg_strerror_r(int errnum, char *buf, size_t buflen) {
-    // Fallback to regular strerror_r
-    int ret = strerror_r(errnum, buf, buflen);
-    if (ret == 0) {
-        return buf;
-    }
-    return NULL;
 }
