@@ -25,14 +25,15 @@
 
 ERT_STUB(backtrace_symbols_fd, 0)
 ERT_STUB_SILENT(fedisableexcept, -1)
-
-#ifndef __NFDBITS
-#ifdef NFDBITS
-#define __NFDBITS NFDBITS
-#else
-#define __NFDBITS (8 * sizeof(unsigned long))
-#endif
-#endif
+ERT_STUB(getcontext, -1)
+ERT_STUB_SILENT(gnu_dev_major, 0)
+ERT_STUB_SILENT(gnu_dev_minor, 0)
+ERT_STUB(makecontext, 0)
+ERT_STUB(mallinfo, 0)
+ERT_STUB_SILENT(pthread_setname_np, 0)
+ERT_STUB(pthread_yield, -1)
+ERT_STUB(setcontext, -1)
+ERT_STUB(__fdelt_chk, 0)
 
 // New stubs for newer glibc/libraries
 char *__fgets_chk(char *s, size_t size, int n, FILE *stream) {
@@ -72,15 +73,6 @@ int swapcontext(ucontext_t *oucp, const ucontext_t *ucp) {
     return -1;
 }
 
-// Additional stubs for OpenSSL/crypto library functions
-long __fdelt_chk(long fd) {
-    if (fd < 0 || fd >= FD_SETSIZE) {
-        errno = EINVAL;
-        return -1;
-    }
-    return fd / __NFDBITS;
-}
-
 char *__xpg_strerror_r(int errnum, char *buf, size_t buflen) {
     // Fallback to regular strerror_r
     int ret = strerror_r(errnum, buf, buflen);
@@ -88,15 +80,4 @@ char *__xpg_strerror_r(int errnum, char *buf, size_t buflen) {
         return buf;
     }
     return NULL;
-}
-
-// Context manipulation functions used by OpenSSL async
-int getcontext(ucontext_t *ucp) {
-    errno = ENOSYS;
-    return -1;
-}
-
-void makecontext(ucontext_t *ucp, void (*func)(void), int argc, ...) {
-    // Not implemented in enclave
-    errno = ENOSYS;
 }
