@@ -1,9 +1,10 @@
-FROM testnetobscuronet.azurecr.io/obscuronet/ten-edb-build-base:v0.3.3 AS build
+#FROM testnetobscuronet.azurecr.io/obscuronet/ten-edb-build-base:v0.3.3 AS build
+FROM local-build-base AS build
 
 COPY . /edgelessdb
 
 # download 3rd party dependencies (mariadb & rocksdb)
-RUN git submodule update --init --recursive
+RUN cd edgelessdb &&  git submodule update --init --recursive
 
 # comment out some deprecated RND initialisation
 RUN cd edgelessdb/3rdparty/edgeless-rocksdb && ls -ll
