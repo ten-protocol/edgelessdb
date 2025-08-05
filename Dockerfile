@@ -23,13 +23,14 @@ RUN cd edgelessdb && export SOURCE_DATE_EPOCH=$(git log -1 --pretty=%ct)  \
   && make -j1 VERBOSE=1  edb-enclave
 
 # sign edb
-ARG heapsize=1024
-ARG numtcs=64
-ARG production=OFF
+ARG HEAP_SIZE
+ARG MAX_THREADS
+ARG PRODUCTION
+
 RUN --mount=type=secret,id=signingkey,dst=/edbbuild/private.pem,required=true \
   cd edbbuild \
   && . /opt/edgelessrt/share/openenclave/openenclaverc \
-  && cmake -DHEAPSIZE=$heapsize -DNUMTCS=$numtcs -DPRODUCTION=$production \
+  && cmake -DHEAPSIZE=$HEAP_SIZE -DNUMTCS=$MAX_THREADS -DPRODUCTION=$PRODUCTION \
     -DCMAKE_C_FLAGS="-Wno-deprecated-declarations" \
     -DCMAKE_CXX_FLAGS="-Wno-deprecated-declarations" \
     /edgelessdb \
@@ -46,12 +47,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
   && wget -qO- https://download.01.org/intel-sgx/sgx_repo/ubuntu/intel-sgx-deb.key | apt-key add \
   && echo 'deb [arch=amd64] https://download.01.org/intel-sgx/sgx_repo/ubuntu jammy main' >> /etc/apt/sources.list \
   && apt-get update \
-  && apt-get install -y --no-install-recommends libsgx-dcap-default-qpl \
   && rm -rf /var/lib/apt/lists/*
-
-ARG PCCS_URL=https://global.acccache.azure.net/sgx/certification/v4/
-RUN echo "PCCS_URL=${PCCS_URL}" > /etc/sgx_default_qcnl.conf \
-  && echo "USE_SECURE_CERT=FALSE" >> /etc/sgx_default_qcnl.conf
 
 COPY --from=build /edbbuild/edb /edbbuild/edb-enclave.signed /edbbuild/edgelessdb-sgx.json /edgelessdb/src/entry.sh /
 COPY --from=build /opt/edgelessrt/bin/erthost /opt/edgelessrt/bin/

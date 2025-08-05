@@ -9,6 +9,18 @@ on:
         description: 'Tag to build and push (leave empty for latest)'
         required: true
         default: ''
+      heap_size:
+        description: 'Heap size in MB'
+        required: true
+        default: 1024
+      max_threads:
+        description: 'Number of TCS(max threads)'
+        required: true
+        default: 64
+      production:
+        description: 'Production'
+        required: true
+        default: 'ON'
       azure_tenant_id:
         description: 'Azure Tenant ID (leave empty to use the local testing key)'
         required: false
@@ -57,7 +69,17 @@ jobs:
           VERSION: ${{ steps.get_version.outputs.VERSION }}
           AZURE_TENANT_ID: ${{ github.event.inputs.azure_tenant_id }}
           AZURE_SUBSCRIPTION_ID: ${{ github.event.inputs.azure_subscription_id }}
+          HEAP_SIZE: ${{ github.event.inputs.heap_size }}
+          MAX_THREADS: ${{ github.event.inputs.max_threads }}
+          PRODUCTION: ${{ github.event.inputs.production }}
         run: |
-          DOCKER_BUILDKIT=1 docker build  -t testnetobscuronet.azurecr.io/obscuronet/ten-edb:${VERSION} -f Dockerfile --secret id=signingkey,src=testnet.pem .
-          docker push testnetobscuronet.azurecr.io/obscuronet/ten-edb:${VERSION}
+          DOCKER_BUILDKIT=1 docker build  -t testnetobscuronet.azurecr.io/obscuronet/ten-edb-${HEAP_SIZE}:${VERSION} \ 
+            --build-arg AZURE_TENANT_ID=${AZURE_TENANT_ID} \
+            --build-arg AZURE_SUBSCRIPTION_ID=${AZURE_SUBSCRIPTION_ID} \
+            --build-arg HEAP_SIZE=${HEAP_SIZE} \
+            --build-arg MAX_THREADS=${MAX_THREADS} \
+            --build-arg PRODUCTION=${PRODUCTION} \
+            -f Dockerfile \ 
+            --secret id=signingkey,src=testnet.pem .
+          docker push testnetobscuronet.azurecr.io/obscuronet/ten-edb-${HEAP_SIZE}:${VERSION}
           
