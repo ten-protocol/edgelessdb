@@ -73,13 +73,15 @@ jobs:
           MAX_THREADS: ${{ github.event.inputs.max_threads }}
           PRODUCTION: ${{ github.event.inputs.production }}
         run: |
-          DOCKER_BUILDKIT=1 docker build  -t testnetobscuronet.azurecr.io/obscuronet/ten-edb-${HEAP_SIZE}:${VERSION} \ 
+          DOCKER_BUILDKIT=1 docker build \
+            -t testnetobscuronet.azurecr.io/obscuronet/ten-edb-${HEAP_SIZE}:${VERSION} \
             --build-arg AZURE_TENANT_ID=${AZURE_TENANT_ID} \
             --build-arg AZURE_SUBSCRIPTION_ID=${AZURE_SUBSCRIPTION_ID} \
             --build-arg HEAP_SIZE=${HEAP_SIZE} \
             --build-arg MAX_THREADS=${MAX_THREADS} \
             --build-arg PRODUCTION=${PRODUCTION} \
-            -f Dockerfile \ 
-            --secret id=signingkey,src=testnet.pem .
+            -f Dockerfile \
+            --secret id=signingkey,src=testnet.pem \
+            .
           docker push testnetobscuronet.azurecr.io/obscuronet/ten-edb-${HEAP_SIZE}:${VERSION}
           
