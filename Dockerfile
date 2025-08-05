@@ -47,6 +47,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
   && wget -qO- https://download.01.org/intel-sgx/sgx_repo/ubuntu/intel-sgx-deb.key | apt-key add \
   && echo 'deb [arch=amd64] https://download.01.org/intel-sgx/sgx_repo/ubuntu jammy main' >> /etc/apt/sources.list \
   && apt-get update \
+  && apt-get install -y --no-install-recommends libsgx-dcap-default-qpl \
   && rm -rf /var/lib/apt/lists/*
 
 COPY --from=build /edbbuild/edb /edbbuild/edb-enclave.signed /edbbuild/edgelessdb-sgx.json /edgelessdb/src/entry.sh /
