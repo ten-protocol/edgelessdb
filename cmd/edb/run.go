@@ -16,6 +16,8 @@
 package main
 
 import (
+	"os"
+
 	"github.com/edgelesssys/edgelessdb/edb/core"
 	"github.com/edgelesssys/edgelessdb/edb/db"
 	"github.com/edgelesssys/edgelessdb/edb/server"
@@ -36,6 +38,8 @@ func run(cfg core.Config, isMarble bool, internalPath string, internalAddress st
 
 	fs := afero.Afero{Fs: afero.NewOsFs()}
 	core := core.NewCore(cfg, rt, db, fs, isMarble)
+
+	os.Setenv("GODEBUG", "httpmuxgo121=1")
 
 	mux := server.CreateServeMux(core)
 	if !core.IsRecovering() {
