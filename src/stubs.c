@@ -58,16 +58,6 @@ int pthread_setname_np(pthread_t thread, const char *name) {
     return 0;
 }
 
-// musl implements POSIX which returns int, but we
-// compile mariadb with glibc which returns char*
-// see man strerror
-int strerror_r(int errnum, char *buf, size_t buflen) {
-    (void)errnum;   // Mark as intentionally unused
-    (void)buf;
-    (void)buflen;
-    return 0;
-}
-
 
 // GNU version of strerror_r that returns char*
 // We provide this as __xpg_strerror_r and create an alias

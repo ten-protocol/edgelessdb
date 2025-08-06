@@ -220,12 +220,12 @@ target_link_libraries(edb-noenclave
 
 # We want to override OPENSSL_rdtsc in libcrypto. To avoid multiple definition errors, we extract the
 # obj containing the original function, rename the symbol, and link the obj before linking libcrypto.
-add_custom_command(OUTPUT libdefault-lib-rand_tsc.o
+add_custom_command(OUTPUT libcrypto-lib-x86_64cpuid.o
   DEPENDS /usr/lib/x86_64-linux-gnu/libcrypto.a
-  COMMAND ar x /usr/lib/x86_64-linux-gnu/libcrypto.a libdefault-lib-rand_tsc.o)
-add_custom_command(OUTPUT libdefault-lib-rand_tsc_.o
-  DEPENDS libdefault-lib-rand_tsc.o
-  COMMAND bbe -e 's/OPENSSL_rdtsc/OPENSSL_rdtsC/' libdefault-lib-rand_tsc.o > libdefault-lib-rand_tsc_.o)
+  COMMAND ar x /usr/lib/x86_64-linux-gnu/libcrypto.a libcrypto-lib-x86_64cpuid.o)
+add_custom_command(OUTPUT libcrypto-lib-x86_64cpuid_.o
+  DEPENDS libcrypto-lib-x86_64cpuid.o
+  COMMAND bbe -e 's/OPENSSL_rdtsc/OPENSSL_rdtsC/' libcrypto-lib-x86_64cpuid.o > libcrypto-lib-x86_64cpuid_.o)
 
 add_library(edb-lib
   src/emain.cc
@@ -240,7 +240,7 @@ add_custom_target(edb-golib
   ${CMAKE_SOURCE_DIR}/src/build_golib.sh ${CMAKE_BINARY_DIR} ${PROJECT_VERSION}
   WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/cmd/edb)
 
-add_executable(edb-enclave src/mysqld_main.cc src/stubs.c libdefault-lib-rand_tsc_.o)
+add_executable(edb-enclave src/mysqld_main.cc src/stubs.c libcrypto-lib-x86_64cpuid_.o)
 add_dependencies(edb-enclave edb-golib mariadb)
 
 target_link_libraries(edb-enclave
@@ -252,10 +252,7 @@ target_link_libraries(edb-enclave
     openenclave::oehostresolver
     openenclave::oehostsock
     ${CMAKE_BINARY_DIR}/edb.a
-    ${MARIADB_LIBS}
-)
-
-target_link_options(edb-enclave PRIVATE -Wl,--allow-multiple-definition)
+    ${MARIADB_LIBS})
 
 add_custom_command(
   OUTPUT edb-enclave.signed

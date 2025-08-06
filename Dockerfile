@@ -18,7 +18,6 @@ RUN cd edgelessdb && export SOURCE_DATE_EPOCH=$(git log -1 --pretty=%ct)  \
   && cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTS=OFF \
     -DCMAKE_C_FLAGS="-Wno-deprecated-declarations" \
     -DCMAKE_CXX_FLAGS="-Wno-deprecated-declarations -Wno-other" \
-    -DMYSQL_MAINTAINER_MODE=NO \
     /edgelessdb \
   && make -j1 VERBOSE=1  edb-enclave
 
