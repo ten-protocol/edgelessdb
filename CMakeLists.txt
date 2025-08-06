@@ -80,7 +80,7 @@ ProcessorCount(NPROC)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_EXTENSIONS OFF)
-# add_compile_options(-Wall -Wextra -pedantic -Werror)
+add_compile_options(-Wall -Wextra -pedantic -Werror)
 if(TIDY)
   set(CMAKE_CXX_CLANG_TIDY clang-tidy-10)
 endif()
@@ -244,7 +244,6 @@ add_executable(edb-enclave src/mysqld_main.cc src/stubs.c libdefault-lib-rand_ts
 add_dependencies(edb-enclave edb-golib mariadb)
 
 target_link_libraries(edb-enclave
-    pthread
     openenclave::oeenclave
     openenclave::ertcalls
     edb-lib
@@ -257,10 +256,6 @@ target_link_libraries(edb-enclave
 )
 
 target_link_options(edb-enclave PRIVATE -Wl,--allow-multiple-definition)
-target_compile_definitions(edb-enclave PRIVATE
-    _GNU_SOURCE
-    _FORTIFY_SOURCE=0  # Disable fortified functions
-)
 
 add_custom_command(
   OUTPUT edb-enclave.signed

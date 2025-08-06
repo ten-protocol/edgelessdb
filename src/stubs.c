@@ -32,11 +32,13 @@ ERT_STUB(pthread_yield, -1)
 ERT_STUB(__fdelt_chk, 0)
 
 int getcontext(ucontext_t *ucp) {
+    (void)ucp;
     errno = ENOSYS;
     return -1;
 }
 
 int setcontext(const ucontext_t *ucp) {
+    (void)ucp;
     errno = ENOSYS;
     return -1;
 }
@@ -59,9 +61,13 @@ int pthread_setname_np(pthread_t thread, const char *name) {
 // musl implements POSIX which returns int, but we
 // compile mariadb with glibc which returns char*
 // see man strerror
-int strerror_r (int, char *, size_t){
+int strerror_r(int errnum, char *buf, size_t buflen) {
+    (void)errnum;   // Mark as intentionally unused
+    (void)buf;
+    (void)buflen;
     return 0;
 }
+
 
 // GNU version of strerror_r that returns char*
 // We provide this as __xpg_strerror_r and create an alias
@@ -76,8 +82,14 @@ char* __xpg_strerror_r(int errnum, char *buf, size_t buflen) {
 
 // New stubs for newer glibc/libraries
 char *__fgets_chk(char *s, size_t size, int n, FILE *stream) {
-    if (size > n) {
-        size = n;
+    // Handle negative n (invalid buffer size)
+    if (n <= 0) {
+        return NULL;  // Invalid buffer size
+    }
+
+    // Safe comparison after checking n > 0
+    if (size > (size_t)n) {
+        size = (size_t)n;
     }
     return fgets(s, size, stream);
 }
@@ -104,10 +116,13 @@ struct mallinfo2 mallinfo2(void) {
 int pthread_cond_clockwait(pthread_cond_t *cond, pthread_mutex_t *mutex,
                           clockid_t clockid, const struct timespec *abstime) {
     // Fallback to regular pthread_cond_timedwait
+    (void)clockid;  // Mark parameter as intentionally unused
     return pthread_cond_timedwait(cond, mutex, abstime);
 }
 
 int swapcontext(ucontext_t *oucp, const ucontext_t *ucp) {
+    (void)oucp;
+    (void)ucp;
     errno = ENOSYS;
     return -1;
 }
