@@ -82,6 +82,7 @@ func (c *Core) advanceState(newState state) {
 	if !(c.state < newState && newState < stateMax) {
 		panic(fmt.Errorf("cannot advance from %d to %d", c.state, newState))
 	}
+	fmt.Printf("edb state transition: %d -> %d\n", c.state, newState)
 	c.state = newState
 }
 
@@ -94,7 +95,9 @@ func NewCore(cfg Config, rt rt.Runtime, db db.Database, fs afero.Afero, isMarble
 
 // GetManifestSignature returns the signature of the manifest that has been used to initialize the database.
 func (c *Core) GetManifestSignature() []byte {
+	fmt.Println("GetManifestSignature")
 	c.mutex.Lock()
+	fmt.Println("GetManifestSignature acquired lock")
 	defer c.mutex.Unlock()
 	return c.db.GetManifestSignature()
 }
@@ -154,9 +157,10 @@ func (c *Core) Initialize(jsonManifest []byte) ([]byte, error) {
 		return nil, err
 	}
 
-	fmt.Println("restarting ...")
+	fmt.Println("restarting in 2 seconds...")
 	go func() {
-		time.Sleep(time.Second)
+		time.Sleep(2 * time.Second)
+		fmt.Println("now restarting ...")
 		c.rt.RestartHostProcess()
 	}()
 	return recoveryKey, nil
@@ -210,6 +214,8 @@ func (c *Core) StartDatabase() error {
 		if err != nil {
 			return err
 		}
+
+		fmt.Println("successfully initialized database.")
 
 		if !c.isMarble && len(encryptedRecoveryData) > 0 {
 			color.Yellow("----------------------------------------ATTENTION----------------------------------------")
