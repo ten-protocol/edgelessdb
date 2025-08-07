@@ -32,8 +32,16 @@ static void waitUntilStarted() {
 }
 
 static void waitUntilListenInternalReady() {
-	extern int edgeless_listen_internal_ready;
-	waitUntilSet(&edgeless_listen_internal_ready);
+   extern int edgeless_listen_internal_ready;
+   printf("Waiting for edgeless_listen_internal_ready...\n");
+   int attempts = 0;
+   do {
+	   usleep(10000);
+	   if (++attempts % 100 == 0) {
+		   printf("Still waiting... attempt %d\n", attempts);
+	   }
+   } while (!__atomic_load_n(&edgeless_listen_internal_ready, __ATOMIC_SEQ_CST));
+   printf("edgeless_listen_internal_ready is now set!\n");
 }
 */
 import "C"
