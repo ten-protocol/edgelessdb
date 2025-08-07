@@ -17,7 +17,6 @@ package main
 
 /*
 #cgo LDFLAGS: -Wl,-unresolved-symbols=ignore-in-object-files
-#include <stdio.h>
 #include <unistd.h>
 int edgeless_mysqld_main(int argc, char** argv);
 
@@ -29,28 +28,12 @@ static void waitUntilSet(volatile int* p) {
 
 static void waitUntilStarted() {
     extern volatile int mysqld_server_started;
-    printf("Waiting for mysqld_server_started...\n");
-    int attempts = 0;
-    do {
-        usleep(10000);
-        if (++attempts % 100 == 0) {
-            printf("Still waiting for server start... attempt %d\n", attempts);
-        }
-    } while (!__atomic_load_n(&mysqld_server_started, __ATOMIC_SEQ_CST));
-    printf("mysqld_server_started is now set!\n");
+	waitUntilSet(&mysqld_server_started);
 }
 
 static void waitUntilListenInternalReady() {
-   extern int edgeless_listen_internal_ready;
-   printf("Waiting for edgeless_listen_internal_ready...\n");
-   int attempts = 0;
-   do {
-	   usleep(10000);
-	   if (++attempts % 100 == 0) {
-		   printf("Still waiting... attempt %d\n", attempts);
-	   }
-   } while (!__atomic_load_n(&edgeless_listen_internal_ready, __ATOMIC_SEQ_CST));
-   printf("edgeless_listen_internal_ready is now set!\n");
+   extern volatile int edgeless_listen_internal_ready;
+   waitUntilSet(&edgeless_listen_internal_ready);
 }
 */
 import "C"
