@@ -17,6 +17,7 @@ package main
 
 /*
 #cgo LDFLAGS: -Wl,-unresolved-symbols=ignore-in-object-files
+#include <stdio.h>
 #include <unistd.h>
 int edgeless_mysqld_main(int argc, char** argv);
 
