@@ -162,6 +162,7 @@ func (c *Core) Initialize(jsonManifest []byte) ([]byte, error) {
 		time.Sleep(2 * time.Second)
 		fmt.Println("now restarting ...")
 		c.rt.RestartHostProcess()
+		fmt.Println("restarted ...")
 	}()
 	return recoveryKey, nil
 }

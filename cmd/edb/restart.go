@@ -1,3 +1,4 @@
+//go:build !enclave
 // +build !enclave
 
 /* Copyright (c) Edgeless Systems GmbH
@@ -28,6 +29,11 @@ __attribute__((constructor)) static void init(int argc, char** argv) {
 }
 
 static void restart() {
+    for (int fd = 3; fd < 1024; fd++) {
+        close(fd);  // Ignore errors - some may already be closed
+    }
+
+	unsetenv("EDB_INTERNAL_ADDR");
 	execv("/proc/self/exe", _argv);
 	abort();
 }

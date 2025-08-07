@@ -25,35 +25,26 @@ import (
 )
 
 func run(cfg core.Config, isMarble bool, internalPath string, internalAddress string) {
-	log.Log.Println("=== RUN START ===")
 	var rt executionEnv
 
 	// There are quite a few MariaDB and RocksDB helper threads in addition to pool threads. Let's be rather generous here.
 	maxPoolThreads := rt.GetNumTCS() - 32
-	log.Log.Println("=== GOT NUMTCS:", maxPoolThreads, "===")
 
-	log.Log.Println("=== CREATING MARIADB ===")
 	db, err := db.NewMariadb(internalPath, cfg.DataPath, internalAddress, cfg.DatabaseAddress, cfg.CertificateDNSName, cfg.LogDir, cfg.Debug, isMarble, mariadbd{}, maxPoolThreads)
 	if err != nil {
 		panic(err)
 	}
-	log.Log.Println("=== MARIADB CREATED ===")
 
-	log.Log.Println("=== CREATING CORE ===")
 	fs := afero.Afero{Fs: afero.NewOsFs()}
 	core := core.NewCore(cfg, rt, db, fs, isMarble)
-	log.Log.Println("=== CORE CREATED ===")
 
-	log.Log.Println("=== CREATING ServeMux ===")
 	mux := server.CreateServeMux(core)
-	log.Log.Println("=== ServeMux CREATED ===")
 
 	if !core.IsRecovering() {
-		log.Log.Println("=== Start DB ===")
 		if err := core.StartDatabase(); err != nil {
 			panic(err)
 		}
-		log.Log.Println("=== DB started ===")
+		log.Log.Println("Database started.")
 	} else {
 		color.Red("edb failed to retrieve the database encryption key and has entered recovery mode.")
 		color.Red("You can use the /recover API endpoint to upload the recovery data which was generated when the manifest has been initialized originally.")
