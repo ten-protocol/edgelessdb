@@ -195,6 +195,7 @@ func (d *Mariadb) Start() error {
 	d.mariadbd.WaitUntilListenInternalReady()
 
 	// errors are unrecoverable from here
+	rt.Log.Println("getConfigFromSQL ...")
 
 	cert, key, jsonManifest, err := getConfigFromSQL(normalizedInternalAddr)
 	if err != nil {
@@ -229,6 +230,7 @@ func (d *Mariadb) Start() error {
 		panic(err)
 	}
 	c.Close()
+	rt.Log.Println("waiting until started")
 
 	d.mariadbd.WaitUntilStarted()
 	rt.Log.Println("DB is running.")

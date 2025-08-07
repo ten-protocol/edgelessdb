@@ -27,8 +27,16 @@ static void waitUntilSet(volatile int* p) {
 }
 
 static void waitUntilStarted() {
-	extern volatile int mysqld_server_started;
-	waitUntilSet(&mysqld_server_started);
+    extern volatile int mysqld_server_started;
+    printf("Waiting for mysqld_server_started...\n");
+    int attempts = 0;
+    do {
+        usleep(10000);
+        if (++attempts % 100 == 0) {
+            printf("Still waiting for server start... attempt %d\n", attempts);
+        }
+    } while (!__atomic_load_n(&mysqld_server_started, __ATOMIC_SEQ_CST));
+    printf("mysqld_server_started is now set!\n");
 }
 
 static void waitUntilListenInternalReady() {
