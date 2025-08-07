@@ -161,8 +161,10 @@ func (c *Core) Initialize(jsonManifest []byte) ([]byte, error) {
 	go func() {
 		time.Sleep(2 * time.Second)
 		fmt.Println("now restarting ...")
-		c.rt.RestartHostProcess()
-		fmt.Println("restarted ...")
+		// kill the process, and let k8s restart it
+		os.Exit(0)
+		//c.rt.RestartHostProcess()
+		//fmt.Println("restarted ...")
 	}()
 	return recoveryKey, nil
 }
