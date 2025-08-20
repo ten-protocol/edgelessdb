@@ -21,7 +21,9 @@ RUN cd edgelessdb && export SOURCE_DATE_EPOCH=$(git log -1 --pretty=%ct)  \
     /edgelessdb \
   && make -j1 VERBOSE=1  edb-enclave
 
-# sign edb
+# Run the complete Azure HSM setup (builds signer tool, signs binary, or skips if not needed)
+RUN /edgelessdb/tools/enclavesigner/AzureHSMSignatureScript.sh /edbbuild/edb-enclave.signed /edgelessdb/tools/enclavesigner/main
+
 ARG HEAP_SIZE
 ARG MAX_THREADS
 ARG PRODUCTION
