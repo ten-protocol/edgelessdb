@@ -1,5 +1,5 @@
-#FROM testnetobscuronet.azurecr.io/obscuronet/ten-edb-build-base:v0.3.3 AS build
-FROM local-build-base AS build
+FROM testnetobscuronet.azurecr.io/obscuronet/ten-edb-build-base:v0.3.4 AS build
+
 COPY . /edgelessdb
 
 # download 3rd party dependencies (mariadb & rocksdb)
