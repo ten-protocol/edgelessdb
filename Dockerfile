@@ -1,5 +1,5 @@
-FROM testnetobscuronet.azurecr.io/obscuronet/ten-edb-build-base:v0.3.3 AS build
-
+#FROM testnetobscuronet.azurecr.io/obscuronet/ten-edb-build-base:v0.3.3 AS build
+FROM local-build-base AS build
 COPY . /edgelessdb
 
 # download 3rd party dependencies (mariadb & rocksdb)
@@ -39,7 +39,7 @@ RUN --mount=type=secret,id=signingkey,dst=/edbbuild/private.pem,required=true \
   && cat edgelessdb-sgx.json
 
 # deploy
-FROM --platform=linux/amd64 ubuntu:jammy-20250714
+FROM --platform=linux/amd64 ubuntu:jammy-20250819
 RUN apt-get update && apt-get install -y --no-install-recommends \
   ca-certificates \
   gnupg \

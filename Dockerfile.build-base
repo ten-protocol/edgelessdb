@@ -1,4 +1,4 @@
-FROM ubuntu:jammy-20250714
+FROM ubuntu:jammy-20250819
 
 RUN DEBIAN_FRONTEND=noninteractive apt-get update && apt-get install -y --no-install-recommends \
   bbe \
@@ -24,8 +24,8 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get update && apt-get install -y --no-ins
   libpcre3-dev \
   wget
 
-# Install Go 1.24
-RUN wget -O go.tar.gz https://go.dev/dl/go1.24.2.linux-amd64.tar.gz \
+# Install Go 1.25
+RUN wget -O go.tar.gz https://go.dev/dl/go1.25.1.linux-amd64.tar.gz \
   && tar -C /usr/local -xzf go.tar.gz \
   && rm go.tar.gz
 ENV PATH=$PATH:/usr/local/go/bin
@@ -33,7 +33,7 @@ ENV PATH=$PATH:/usr/local/go/bin
 # Create build directory
 RUN mkdir -p /edbbuild
 
-ARG erttag=v0.4.11
+ARG erttag=v0.4.13
 RUN git clone -b $erttag --depth=1 https://github.com/edgelesssys/edgelessrt \
   && mkdir ertbuild
 
