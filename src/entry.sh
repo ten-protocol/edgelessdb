@@ -11,6 +11,6 @@ echo "PCCS_URL: ${PCCS_URL}"
 
 apt-get install -qq libsgx-dcap-default-qpl
 
-echo "PCCS_URL=${PCCS_URL}\nUSE_SECURE_CERT=FALSE" > /etc/sgx_default_qcnl.conf
+printf "PCCS_URL=%s\nUSE_SECURE_CERT=FALSE\n" "${PCCS_URL}" > /etc/sgx_default_qcnl.conf
 
 ./edb "$@"
